@@ -47,16 +47,22 @@ def text_length(text):
     """Return the length of the text."""
     return len(text) if isinstance(text, str) else 0
 
-def extract_features(title, text):
+def extract_features(title, text, ner_count=None, use_ner=False):
     """Extract all custom features and return as a numpy array."""
     pol, subj = sentiment_subjectivity(text)
-    return np.array([
+    features = [
         title_len(title),
         num_exclamations(text),
         num_uppercase_words(text),
-        named_entity_count(text),
+    ]
+    if use_ner:
+        if ner_count is None:
+            ner_count = named_entity_count(text)
+        features.append(ner_count)
+    features += [
         pol,
         subj,
         count_capitals(text),
         text_length(text)
-    ]) 
+    ]
+    return np.array(features) 

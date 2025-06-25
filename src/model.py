@@ -32,18 +32,19 @@ def get_classifiers():
         classifiers['XGBoostClassifier'] = XGBClassifier(n_estimators=20, max_depth=3, use_label_encoder=False, eval_metric='logloss', random_state=42)
     return classifiers
 
-def prepare_features(df):
+def prepare_features(df, use_ner=False):
     vectorizer = TfidfVectorizer(max_features=1000)
     X_tfidf = vectorizer.fit_transform(df['text_clean'])
-    # Use spaCy's nlp.pipe for fast NER
-    nlp = spacy.load('en_core_web_sm')  # use the same nlp object as in features.py
-    texts = df['text'].tolist()
     titles = df['title'].tolist() if 'title' in df.columns else [''] * len(df)
-    # Get named entity counts in batch
-    ner_counts = [len(doc.ents) for doc in nlp.pipe(texts, batch_size=32, disable=['tagger', 'parser', 'lemmatizer'])]
-    # Now build features row by row, but use precomputed ner_counts
+    texts = df['text'].tolist()
+    if use_ner:
+        import features
+        nlp = features.nlp
+        ner_counts = [len(doc.ents) for doc in nlp.pipe(texts, batch_size=32, disable=['tagger', 'parser', 'lemmatizer'])]
+    else:
+        ner_counts = [None] * len(texts)
     X_custom = np.vstack([
-        extract_features(title, text, ner_count=ner_counts[i])
+        extract_features(title, text, ner_count=ner_counts[i], use_ner=use_ner)
         for i, (title, text) in enumerate(zip(titles, texts))
     ])
     from scipy.sparse import hstack
@@ -75,10 +76,10 @@ def evaluate_classifiers(cv=5, save_results_path='models/model_comparison.csv'):
     results_df.to_csv(save_results_path, index=False)
     return results_df
 
-def train_best_model(best_model_name='RandomForestClassifier', save_path='models/best_model.pkl', vectorizer_path='models/vectorizer.pkl'):
+def train_best_model(best_model_name='RandomForestClassifier', save_path='models/best_model.pkl', vectorizer_path='models/vectorizer.pkl', use_ner=False):
     df = load_data()
     df['text_clean'] = df['text'].apply(clean_text)
-    X, vectorizer = prepare_features(df)
+    X, vectorizer = prepare_features(df, use_ner=use_ner)
     y = df['label']
     classifiers = get_classifiers()
     model = classifiers[best_model_name]
@@ -97,6 +98,6 @@ def load_model(model_path='models/best_model.pkl', vectorizer_path='models/vecto
     return model, vectorizer
 
 if __name__ == "__main__":
-    print("Training the best model (default: RandomForestClassifier)...")
-    train_best_model()
+    print("Training the best model (default: RandomForestClassifier) without NER features...")
+    train_best_model(use_ner=False)
     print("Model training complete. Model saved to models/best_model.pkl") 

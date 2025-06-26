@@ -22,7 +22,7 @@ This project implements an advanced machine learning pipeline to detect fake new
 
 ```
 .
-├── data/                # Place Fake.csv and Real.csv here (not tracked by git)
+├── data/                # Place Fake.csv and Real.csv here 
 ├── models/              # Trained models, vectorizers, and evaluation charts
 ├── src/                 # All source code
 │   ├── app.py           # Streamlit web app

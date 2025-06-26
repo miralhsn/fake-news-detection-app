@@ -51,7 +51,10 @@ def prepare_features(df, use_ner=False):
     X = hstack([X_tfidf, X_custom])
     return X, vectorizer
 
-def evaluate_classifiers(cv=5, save_results_path='models/model_comparison.csv'):
+def evaluate_classifiers(cv=5, save_results_path=None):
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if save_results_path is None:
+        save_results_path = os.path.join(base_dir, 'models', 'model_comparison.csv')
     df = load_data()
     df['text_clean'] = df['text'].apply(clean_text)
     X, vectorizer = prepare_features(df)
@@ -76,7 +79,13 @@ def evaluate_classifiers(cv=5, save_results_path='models/model_comparison.csv'):
     results_df.to_csv(save_results_path, index=False)
     return results_df
 
-def train_best_model(best_model_name='RandomForestClassifier', save_path='models/best_model.pkl', vectorizer_path='models/vectorizer.pkl', use_ner=False):
+def train_best_model(best_model_name='RandomForestClassifier', save_path=None, vectorizer_path=None, use_ner=False):
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if save_path is None:
+        save_path = os.path.join(base_dir, 'models', 'best_model.pkl')
+    if vectorizer_path is None:
+        vectorizer_path = os.path.join(base_dir, 'models', 'vectorizer.pkl')
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     df = load_data()
     df['text_clean'] = df['text'].apply(clean_text)
     X, vectorizer = prepare_features(df, use_ner=use_ner)
@@ -90,7 +99,12 @@ def train_best_model(best_model_name='RandomForestClassifier', save_path='models
         pickle.dump(vectorizer, f)
     return model, vectorizer
 
-def load_model(model_path='models/best_model.pkl', vectorizer_path='models/vectorizer.pkl'):
+def load_model(model_path=None, vectorizer_path=None):
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if model_path is None:
+        model_path = os.path.join(base_dir, 'models', 'best_model.pkl')
+    if vectorizer_path is None:
+        vectorizer_path = os.path.join(base_dir, 'models', 'vectorizer.pkl')
     with open(model_path, 'rb') as f:
         model = pickle.load(f)
     with open(vectorizer_path, 'rb') as f:
